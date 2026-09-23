@@ -94,6 +94,11 @@ A Fritzing file that only opens in one program.
     overlay.pdf       # generated
     overlay.svg       # generated
 
+/lib
+  555.json            # pinout, DIP-8
+  2n2222.json         # pinout, TO-92
+  ...
+
 /tools
   make_overlay.py     # board.json -> pdf/svg
   parse_build.py      # .bbn / .bbn.md -> netlist
@@ -101,6 +106,7 @@ A Fritzing file that only opens in one program.
 
 /examples
   blinker_555.bbn.md
+  transistor_switch.bbn.md
   power_supply.bbn.md
 
 /docs
@@ -227,7 +233,9 @@ tree -L 2 ~/my-circuits/
 
 ```
 board: <model-id>              # required, first line of the block
-<ref> <value> <coord> <coord>  # component between two holes
+<ref> <value> <coord> <coord>          # 2-pin component
+<ref> <value> <coord> <coord> <coord>  # 3-pin component (transistor, pot)
+<ref> <value> <pin>=<coord> ...        # explicit pin mapping
 wire <coord> <coord>           # jumper wire
 # comment                      # end-of-line or whole-line
 ```
@@ -239,6 +247,33 @@ wire <coord> <coord>           # jumper wire
 +rail, -rail    power rails
 Rows a-e and f-j are the two halves of the main strip.
 ```
+
+### Components with more than two pins
+
+**Three-pin parts** take three coordinates in pin order:
+
+```bbn
+Q1   2N2222 b5   b6   b7      # B C E (BJT)
+Q1   BS170  b5   b6   b7      # G D S (FET)
+RV1  10k    a5   a6   a7      # pot: 1 wiper 3
+```
+
+**ICs** can be written two ways:
+
+*Short form* — if the tool knows the part's pinout:
+
+```bbn
+U1   555   f1   f8            # DIP-8, pins 1..8 left-to-right
+```
+
+*Long form* — explicit pin mapping, always unambiguous:
+
+```bbn
+U1   555   f1=1  f2=2  f3=3  f4=4  f5=5  f6=6  f7=7  f8=8
+```
+
+The short form is what people will actually type for common parts.
+The long form is the escape hatch for anything else.
 
 ### Reserved words
 
@@ -270,6 +305,7 @@ U1, U2...    ICs
 LED1...      LEDs
 D1...        diodes
 Q1...        transistors
+RV1...       potentiometers
 SW1...       switches
 ```
 
@@ -303,6 +339,14 @@ not the board.
 A: Chessboard-style rows (a-j) plus columns (1-30) read more naturally
 and are less ambiguous than two numbers. "b12" is a position.
 "12-5" is a question.
+
+**Q: How do I write a transistor or an IC?**
+
+A: Transistors take three coordinates in pin order
+(`Q1 2N2222 b5 b6 b7` — B C E for a BJT, G D S for a FET).
+ICs can take either endpoints (`U1 555 f1 f8`) if the tool knows
+the part, or an explicit pin map (`U1 555 f1=1 f2=2 ...`) if it
+doesn't. See the Reference section for details.
 
 **Q: Won't the label peel off / get torn?**
 
